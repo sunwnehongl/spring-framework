@@ -307,6 +307,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 */
 	@Override
 	public int loadBeanDefinitions(Resource resource) throws BeanDefinitionStoreException {
+		// 把Resource 转换为EncodedResource后从XMl中加载BeanDefinitions
 		return loadBeanDefinitions(new EncodedResource(resource));
 	}
 
@@ -323,8 +324,10 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 			logger.trace("Loading XML bean definitions from " + encodedResource);
 		}
 
+		// 或者正在解析的XML资源
 		Set<EncodedResource> currentResources = this.resourcesCurrentlyBeingLoaded.get();
 
+		// 判断资源是否已经在解析中，防止重复解析
 		if (!currentResources.add(encodedResource)) {
 			throw new BeanDefinitionStoreException(
 					"Detected cyclic loading of " + encodedResource + " - check your import definitions!");
@@ -335,6 +338,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 			if (encodedResource.getEncoding() != null) {
 				inputSource.setEncoding(encodedResource.getEncoding());
 			}
+			// 调用真正的解析方法
 			return doLoadBeanDefinitions(inputSource, encodedResource.getResource());
 		}
 		catch (IOException ex) {
@@ -342,6 +346,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 					"IOException parsing XML document from " + encodedResource.getResource(), ex);
 		}
 		finally {
+			// 从当前解析资源中删除
 			currentResources.remove(encodedResource);
 			if (currentResources.isEmpty()) {
 				this.resourcesCurrentlyBeingLoaded.remove();
@@ -387,7 +392,9 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 			throws BeanDefinitionStoreException {
 
 		try {
+			// 把InputSource 通过DefaultDocumentLoader对象解析为Document对象
 			Document doc = doLoadDocument(inputSource, resource);
+			// 通过DefaultBeanDefinitionDocumentReader对象把Document对象解解析为对应的Bean对象
 			int count = registerBeanDefinitions(doc, resource);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Loaded " + count + " bean definitions from " + resource);
@@ -434,6 +441,10 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	}
 
 	/**
+	 * 如果手动设置了XML的验证模式，就返回设置的验证模式，如果验证模式没有默认为自动模式
+	 * 如果没有手动设置则就通过的调用方法detectValidationMode方法就信息解析，如果没有解析
+	 * 出来默认就返回XSD模式
+	 *
 	 * Determine the validation mode for the specified {@link Resource}.
 	 * If no explicit validation mode has been configured, then the validation
 	 * mode gets {@link #detectValidationMode detected} from the given resource.
@@ -442,14 +453,18 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see #detectValidationMode
 	 */
 	protected int getValidationModeForResource(Resource resource) {
+		// 查询是否手动设置了解析模式，如果设置了就返回
 		int validationModeToUse = getValidationMode();
 		if (validationModeToUse != VALIDATION_AUTO) {
 			return validationModeToUse;
 		}
+		// 通过委托XmlValidationModeDetector来解析XML解析模式
 		int detectedMode = detectValidationMode(resource);
+		// 如果XmlValidationModeDetector解析出来为DTD或者XSD则直接返回
 		if (detectedMode != VALIDATION_AUTO) {
 			return detectedMode;
 		}
+		// 如果XmlValidationModeDetector解析过程中越到异常就默认为XSD模式
 		// Hmm, we didn't get a clear indication... Let's assume XSD,
 		// since apparently no DTD declaration has been found up until
 		// detection stopped (before finding the document's root tag).
@@ -506,9 +521,13 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see BeanDefinitionDocumentReader#registerBeanDefinitions
 	 */
 	public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
+		// 默认实例化一个DefaultBeanDefinitionDocumentReader对象
 		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
+		// 记录解析前的对象个数
 		int countBefore = getRegistry().getBeanDefinitionCount();
+		// 加载以及注册Bean
 		documentReader.registerBeanDefinitions(doc, createReaderContext(resource));
+		// 计算当前这个配置文件中加载的Bean对象的个数
 		return getRegistry().getBeanDefinitionCount() - countBefore;
 	}
 

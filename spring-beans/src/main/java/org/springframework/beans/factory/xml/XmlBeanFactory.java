@@ -75,7 +75,9 @@ public class XmlBeanFactory extends DefaultListableBeanFactory {
 	 * @throws BeansException in case of loading or parsing errors
 	 */
 	public XmlBeanFactory(Resource resource, BeanFactory parentBeanFactory) throws BeansException {
+		// 设置ignoredDependencyInterfaces和父BeanFactory
 		super(parentBeanFactory);
+		// 通过XMLBeanDefinitionReader来完成对XML文件的BeanDefiniton的转换和注册
 		this.reader.loadBeanDefinitions(resource);
 	}
 
