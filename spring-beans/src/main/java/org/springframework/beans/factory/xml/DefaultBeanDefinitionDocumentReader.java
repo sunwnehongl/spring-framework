@@ -327,6 +327,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			// 如果beans模块的标签里面还自定义属性和自定义标签，则调用decorateBeanDefinitionIfRequired方法对这些自定义标签和和属性进行解析
 			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);
 			try {
+				// 将解除出来的BeanDefinition通过BeanDefinitionReaderUtils注册到BeanFactory的Registry中
 				// Register the final decorated instance.
 				BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());
 			}
@@ -334,6 +335,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				getReaderContext().error("Failed to register bean definition with name '" +
 						bdHolder.getBeanName() + "'", ele, ex);
 			}
+			// 通知监听器这个对象注册完成
 			// Send registration event.
 			getReaderContext().fireComponentRegistered(new BeanComponentDefinition(bdHolder));
 		}
